@@ -1,29 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Settings</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-slate-50">
-<div class="container mx-auto p-6 max-w-3xl">
-    <div class="flex items-center justify-between mb-6">
+@extends('layouts.app')
+
+@section('content')
+<div class="mx-auto max-w-3xl space-y-6">
+    <div class="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-xl backdrop-blur md:flex-row md:items-center md:justify-between">
         <div>
             <h1 class="text-2xl font-bold">Admin Settings</h1>
             <p class="text-slate-600">Manage service control switches and system behavior.</p>
         </div>
-        <a href="/admin/users" class="bg-slate-800 text-white px-4 py-2 rounded">User Management</a>
+        <a href="{{ route('admin.users.index') }}" class="rounded-full bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700">User Management</a>
     </div>
 
     @if (session('status'))
-        <div class="bg-green-100 text-green-800 px-4 py-3 rounded mb-4">{{ session('status') }}</div>
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ session('status') }}</div>
     @endif
 
-    <form action="/admin/settings" method="POST" class="bg-white rounded-lg shadow p-6 space-y-5">
+    <form action="{{ route('admin.settings.store') }}" method="POST" class="space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-xl" data-confirm="Save these admin settings?">
         @csrf
 
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div>
                 <h2 class="font-semibold">Ticket Notifications</h2>
                 <p class="text-sm text-slate-600">Enable or disable dashboard notifications on the IT support area.</p>
@@ -36,7 +30,7 @@
             </div>
         </div>
 
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div>
                 <h2 class="font-semibold">User Management</h2>
                 <p class="text-sm text-slate-600">Allow admin user CRUD and password reset controls.</p>
@@ -49,7 +43,7 @@
             </div>
         </div>
 
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div>
                 <h2 class="font-semibold">Ticket Creation</h2>
                 <p class="text-sm text-slate-600">Enable or disable ticket creation for staff users.</p>
@@ -62,28 +56,7 @@
             </div>
         </div>
 
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Save Settings</button>
+        <button type="submit" class="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700">Save Settings</button>
     </form>
 </div>
-
-<script>
-    document.querySelectorAll('[data-open-reset]').forEach(function (button) {
-        button.addEventListener('click', function () {
-            const target = document.getElementById(button.getAttribute('data-open-reset'));
-            if (target) {
-                target.classList.remove('hidden');
-            }
-        });
-    });
-
-    document.querySelectorAll('[data-close-reset]').forEach(function (button) {
-        button.addEventListener('click', function () {
-            const target = document.getElementById(button.getAttribute('data-close-reset'));
-            if (target) {
-                target.classList.add('hidden');
-            }
-        });
-    });
-</script>
-</body>
-</html>
+@endsection

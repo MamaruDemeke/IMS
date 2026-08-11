@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\MessageStoreRequest;
+use App\Http\Requests\TicketStoreRequest;
+use App\Http\Requests\TicketUpdateRequest;
 use App\Models\AuditLog;
 use App\Models\Department;
 use App\Models\Ticket;
@@ -34,15 +37,9 @@ class TicketController extends Controller
         return view('tickets.create', compact('departments'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(TicketStoreRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string'],
-            'priority' => ['required', 'in:low,medium,high,urgent'],
-            'category' => ['required', 'string'],
-            'department_id' => ['required', 'exists:departments,id'],
-        ]);
+        $validated = $request->validated();
 
         $ticket = Ticket::query()->create([
             'ticket_number' => 'ITSMS-'.strtoupper(Str::random(6)),
@@ -82,18 +79,16 @@ class TicketController extends Controller
         return view('tickets.show', compact('ticket'));
     }
 
-    public function message(Request $request, Ticket $ticket): RedirectResponse
+    public function message(MessageStoreRequest $request, Ticket $ticket): RedirectResponse
     {
         abort_unless(Gate::check('respond-to-ticket', $ticket), 403);
 
-        $validated = $request->validate([
-            'message' => ['required', 'string', 'min:3'],
-        ]);
+        $validated = $request->validated();
 
         TicketHistory::query()->create([
             'ticket_id' => $ticket->getKey(),
             'user_id' => $request->user()?->getKey(),
-            'action' => 'responded',
+            'action' => Gate::check('manage-tickets') ? 'responded' : 'replied',
             'details' => $validated['message'],
         ]);
 
@@ -108,16 +103,11 @@ class TicketController extends Controller
         return redirect()->route('tickets.show', $ticket)->with('status', 'Message sent successfully.');
     }
 
-    public function update(Request $request, Ticket $ticket): RedirectResponse
+    public function update(TicketUpdateRequest $request, Ticket $ticket): RedirectResponse
     {
         abort_unless(Gate::check('manage-tickets', $request->user()), 403);
 
-        $validated = $request->validate([
-            'status' => ['required', 'in:open,in_progress,resolved,closed'],
-            'priority' => ['nullable', 'in:low,medium,high,urgent'],
-            'assigned_to' => ['nullable', 'exists:users,id'],
-            'response' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $previousStatus = $ticket->getAttribute('status');
         $previousPriority = $ticket->getAttribute('priority');

@@ -1,12 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ITSMS Login</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="min-h-screen bg-slate-100 px-4 py-8 flex items-center justify-center">
+@extends('layouts.app')
+
+@section('content')
+<div class="flex min-h-full items-center justify-center px-4 py-8">
     <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-xl">
         <div class="mb-8 text-center">
             <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
@@ -94,21 +89,21 @@
             </button>
         </form>
     </div>
+</div>
 
-    <script>
-        const passwordInput = document.getElementById('password');
-        const togglePassword = document.getElementById('togglePassword');
-        const eyeIcon = document.getElementById('eyeIcon');
-        const eyeSlashIcon = document.getElementById('eyeSlashIcon');
+<script>
+    const passwordInput = document.getElementById('password');
+    const togglePassword = document.getElementById('togglePassword');
+    const eyeIcon = document.getElementById('eyeIcon');
+    const eyeSlashIcon = document.getElementById('eyeSlashIcon');
 
-        togglePassword?.addEventListener('click', () => {
-            const isPassword = passwordInput.type === 'password';
-            passwordInput.type = isPassword ? 'text' : 'password';
-            togglePassword.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
-            eyeIcon.classList.toggle('hidden', !isPassword);
-            eyeSlashIcon.classList.toggle('hidden', isPassword);
-        });
-    </script>
-</body>
-</html>
+    togglePassword?.addEventListener('click', () => {
+        const isPassword = passwordInput.type === 'password';
+        passwordInput.type = isPassword ? 'text' : 'password';
+        togglePassword.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+        eyeIcon.classList.toggle('hidden', !isPassword);
+        eyeSlashIcon.classList.toggle('hidden', isPassword);
+    });
+</script>
+@endsection
                 <

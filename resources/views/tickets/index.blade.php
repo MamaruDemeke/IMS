@@ -1,28 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ticket Queue</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-slate-50">
-<div class="container mx-auto p-6">
-    <div class="flex items-center justify-between mb-6">
+@extends('layouts.app')
+
+@section('content')
+<div class="mx-auto max-w-7xl space-y-6">
+    <div class="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-xl backdrop-blur md:flex-row md:items-center md:justify-between">
         <div>
             <h1 class="text-2xl font-bold">Ticket Queue</h1>
             @unless (auth()->user()?->can('manage-tickets'))
-                <p class="text-sm text-slate-600 mt-1">You can only see the tickets you submitted. The IT department can view and respond to all tickets.</p>
+                <p class="mt-1 text-sm text-slate-600">You can only see the tickets you submitted. The IT department can view and respond to all tickets.</p>
             @endunless
         </div>
-        <a href="/tickets/create" class="bg-blue-600 text-white px-4 py-2 rounded">New Ticket</a>
+        <div class="flex flex-wrap gap-3">
+            <a href="{{ route('ticket-histories.index') }}" class="rounded-full bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-violet-700">History</a>
+            <a href="{{ route('tickets.create') }}" class="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700">New Ticket</a>
+        </div>
     </div>
 
     @if (session('status'))
-        <div class="bg-green-100 text-green-800 px-4 py-3 rounded mb-4">{{ session('status') }}</div>
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ session('status') }}</div>
     @endif
 
-    <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
         <table class="min-w-full text-left">
             <thead class="bg-slate-100">
             <tr>
@@ -37,7 +34,7 @@
             <tbody>
             @forelse ($tickets as $ticket)
                 <tr class="border-t">
-                    <td class="p-3"><a href="/tickets/{{ $ticket->id }}" class="text-blue-600 underline">{{ $ticket->ticket_number }}</a></td>
+                    <td class="p-3"><a href="{{ route('tickets.show', $ticket) }}" class="text-blue-600 underline">{{ $ticket->ticket_number }}</a></td>
                     <td class="p-3">{{ $ticket->user?->name ?? 'Unknown employee' }}</td>
                     <td class="p-3">{{ $ticket->title }}</td>
                     <td class="p-3">{{ ucfirst($ticket->priority) }}</td>
@@ -53,5 +50,4 @@
         </table>
     </div>
 </div>
-</body>
-</html>
+@endsection

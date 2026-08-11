@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UserStoreRequest;
+use App\Http\Requests\UserUpdateRequest;
 use App\Models\Department;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -53,18 +55,11 @@ class UserManagementController extends Controller
         return view('admin.users.create', compact('departments'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(UserStoreRequest $request): RedirectResponse
     {
         abort_unless($request->user()?->role === 'admin', 403);
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:6', 'confirmed'],
-            'role' => ['required', 'in:admin,it_manager,it_officer,employee'],
-            'department_id' => ['required', 'exists:departments,id'],
-            'is_active' => ['required', 'boolean'],
-        ]);
+        $validated = $request->validated();
 
         User::query()->create([
             'name' => $validated['name'],
@@ -87,18 +82,11 @@ class UserManagementController extends Controller
         return view('admin.users.edit', compact('user', 'departments'));
     }
 
-    public function update(Request $request, User $user): RedirectResponse
+    public function update(UserUpdateRequest $request, User $user): RedirectResponse
     {
         abort_unless($request->user()?->role === 'admin', 403);
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email,'.$user->getKey()],
-            'role' => ['required', 'in:admin,it_manager,it_officer,employee'],
-            'department_id' => ['required', 'exists:departments,id'],
-            'is_active' => ['required', 'boolean'],
-            'password' => ['nullable', 'string', 'min:6', 'confirmed'],
-        ]);
+        $validated = $request->validated();
 
         $user->update([
             'name' => $validated['name'],

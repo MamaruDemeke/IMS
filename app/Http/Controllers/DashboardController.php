@@ -31,6 +31,9 @@ class DashboardController extends Controller
                 });
             });
         $communicationNotifications = (clone $historyQuery)->count();
+        $unreadNotifications = (clone $historyQuery)
+            ->where('is_read', false)
+            ->count();
         $recentNotifications = TicketHistory::query()
             ->with(['ticket.user', 'ticket.department', 'user'])
             ->when(! $canManageTickets, function ($query) use ($request) {
@@ -42,6 +45,6 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        return view('dashboard', compact('tickets', 'openTickets', 'users', 'departments', 'communicationNotifications', 'recentNotifications', 'canManageTickets'));
+        return view('dashboard', compact('tickets', 'openTickets', 'users', 'departments', 'communicationNotifications', 'unreadNotifications', 'recentNotifications', 'canManageTickets'));
     }
 }

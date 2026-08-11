@@ -10,7 +10,11 @@ class TicketHistory extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['ticket_id', 'user_id', 'action', 'details'];
+    protected $fillable = ['ticket_id', 'user_id', 'action', 'details', 'is_read'];
+
+    protected $casts = [
+        'is_read' => 'boolean',
+    ];
 
     public function ticket(): BelongsTo
     {

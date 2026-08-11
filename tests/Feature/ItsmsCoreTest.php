@@ -125,3 +125,74 @@ test('employees only see their own ticket activity on the dashboard', function (
         ->assertDontSee('Another employee ticket activity')
         ->assertSee('My Ticket Activity');
 });
+
+test('employees can view ticket history and notification buttons on the dashboard', function () {
+    $department = Department::create([
+        'name' => 'Support',
+        'code' => 'SUP',
+        'description' => 'Support department',
+    ]);
+
+    $employee = User::factory()->create(['role' => 'employee', 'department_id' => $department->id]);
+    $ticket = Ticket::create([
+        'ticket_number' => 'ITSMS-NOTIF1',
+        'title' => 'Printer issue',
+        'description' => 'Printer is offline',
+        'status' => 'open',
+        'priority' => 'medium',
+        'category' => 'Hardware',
+        'user_id' => $employee->id,
+        'department_id' => $department->id,
+    ]);
+
+    $ticket->histories()->create([
+        'user_id' => $employee->id,
+        'action' => 'created',
+        'details' => 'Ticket created by the employee',
+        'is_read' => false,
+    ]);
+
+    $this->actingAs($employee)
+        ->get('/dashboard')
+        ->assertOk()
+        ->assertSee('Ticket History')
+        ->assertSee('Notifications')
+        ->assertSee('1');
+});
+
+test('employees can open unread notifications from their dashboard', function () {
+    $department = Department::create([
+        'name' => 'Support',
+        'code' => 'SUP',
+        'description' => 'Support department',
+    ]);
+
+    $employee = User::factory()->create(['role' => 'employee', 'department_id' => $department->id]);
+    $ticket = Ticket::create([
+        'ticket_number' => 'ITSMS-NOTIF2',
+        'title' => 'VPN issue',
+        'description' => 'Cannot connect to VPN',
+        'status' => 'open',
+        'priority' => 'high',
+        'category' => 'Network',
+        'user_id' => $employee->id,
+        'department_id' => $department->id,
+    ]);
+
+    $history = $ticket->histories()->create([
+        'user_id' => $employee->id,
+        'action' => 'created',
+        'details' => 'New update from IT',
+        'is_read' => false,
+    ]);
+
+    $this->actingAs($employee)
+        ->get('/notifications')
+        ->assertOk()
+        ->assertSee('New update from IT')
+        ->assertSee('VPN issue');
+
+    $this->actingAs($employee)
+        ->get('/notifications/'.$history->id.'/open')
+        ->assertRedirect();
+});

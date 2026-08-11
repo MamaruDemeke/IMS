@@ -21,7 +21,10 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         Gate::define('respond-to-ticket', function ($user, ?Ticket $ticket = null) {
-            return $ticket !== null && Gate::forUser($user)->check('manage-tickets');
+            return $ticket !== null && (
+                Gate::forUser($user)->check('manage-tickets')
+                || $ticket->getAttribute('user_id') === $user?->getKey()
+            );
         });
 
         Gate::define('view-ticket', function ($user, ?Ticket $ticket = null) {
@@ -33,7 +36,7 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         Gate::define('view-ticket-history', function ($user) {
-            return Gate::forUser($user)->check('manage-tickets');
+            return $user !== null;
         });
     }
 }

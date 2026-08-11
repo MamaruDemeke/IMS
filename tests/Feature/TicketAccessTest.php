@@ -63,7 +63,7 @@ test('employees can only view their own tickets while it staff can view any tick
     $this->actingAs($itOfficer)->get(route('tickets.show', $otherTicket))->assertOk();
 });
 
-test('employees cannot respond to tickets, including their own', function () {
+test('employees can reply to their own tickets but not other employees tickets', function () {
     $department = Department::create([
         'name' => 'HR',
         'code' => 'HR',
@@ -107,12 +107,14 @@ test('employees cannot respond to tickets, including their own', function () {
     ]);
 
     $this->actingAs($employee)
-        ->post(route('tickets.messages.store', $ownTicket), ['message' => 'This should be blocked'])
-        ->assertForbidden();
+        ->post(route('tickets.messages.store', $ownTicket), ['message' => 'I have more details for IT.'])
+        ->assertRedirect(route('tickets.show', $ownTicket));
 
     $this->actingAs($employee)
         ->post(route('tickets.messages.store', $otherTicket), ['message' => 'This should be blocked'])
         ->assertForbidden();
+
+    expect($ownTicket->histories()->where('action', 'replied')->count())->toBe(1);
 });
 
 test('it managers and it officers can respond to tickets', function () {
@@ -152,7 +154,7 @@ test('it managers and it officers can respond to tickets', function () {
     expect($ticket->histories()->where('action', 'responded')->count())->toBe(2);
 });
 
-test('ticket history is restricted to it department members', function () {
+test('employees can only view their own ticket history', function () {
     $department = Department::create([
         'name' => 'Operations',
         'code' => 'OPS',
@@ -166,13 +168,39 @@ test('ticket history is restricted to it department members', function () {
         'department_id' => $department->id,
     ]);
 
-    $itOfficer = User::factory()->create([
-        'name' => 'IT Officer Two',
-        'email' => 'it-officer2@example.com',
-        'role' => 'it_officer',
+    $otherEmployee = User::factory()->create([
+        'name' => 'Employee Six',
+        'email' => 'employee6@example.com',
+        'role' => 'employee',
         'department_id' => $department->id,
     ]);
 
-    $this->actingAs($employee)->get(route('ticket-histories.index'))->assertForbidden();
-    $this->actingAs($itOfficer)->get(route('ticket-histories.index'))->assertOk();
+    $ownTicket = Ticket::create([
+        'ticket_number' => 'ITSMS-HIST1',
+        'title' => 'Own history',
+        'description' => 'Own ticket history',
+        'status' => 'open',
+        'priority' => 'medium',
+        'category' => 'Hardware',
+        'user_id' => $employee->id,
+        'department_id' => $department->id,
+    ]);
+    $otherTicket = Ticket::create([
+        'ticket_number' => 'ITSMS-HIST2',
+        'title' => 'Other history',
+        'description' => 'Other ticket history',
+        'status' => 'open',
+        'priority' => 'medium',
+        'category' => 'Hardware',
+        'user_id' => $otherEmployee->id,
+        'department_id' => $department->id,
+    ]);
+    $ownTicket->histories()->create(['user_id' => $employee->id, 'action' => 'created', 'details' => 'My ticket communication']);
+    $otherTicket->histories()->create(['user_id' => $otherEmployee->id, 'action' => 'created', 'details' => 'Other ticket communication']);
+
+    $this->actingAs($employee)
+        ->get(route('ticket-histories.index'))
+        ->assertOk()
+        ->assertSee('My ticket communication')
+        ->assertDontSee('Other ticket communication');
 });

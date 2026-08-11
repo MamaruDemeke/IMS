@@ -15,20 +15,27 @@ class TicketHistoryController extends Controller
     {
         abort_unless(Gate::check('view-ticket-history'), 403);
 
+        $canManageTickets = Gate::check('manage-tickets');
+
         $histories = TicketHistory::query()
             ->with(['ticket.user', 'ticket.department', 'user'])
+            ->when(! $canManageTickets, function ($query) use ($request) {
+                $query->whereHas('ticket', function ($ticketQuery) use ($request) {
+                    $ticketQuery->where('user_id', $request->user()?->getKey());
+                });
+            })
             ->when($request->filled('date'), function ($query) use ($request) {
                 $query->whereDate('created_at', $request->input('date'));
             })
             ->when($request->filled('from_date') && $request->filled('to_date'), function ($query) use ($request) {
                 $query->whereBetween('created_at', [$request->input('from_date'), $request->input('to_date')]);
             })
-            ->when($request->filled('employee'), function ($query) use ($request) {
+            ->when($canManageTickets && $request->filled('employee'), function ($query) use ($request) {
                 $query->whereHas('ticket.user', function ($q) use ($request) {
                     $q->where('name', 'like', "%{$request->input('employee')}%");
                 });
             })
-            ->when($request->filled('department_id'), function ($query) use ($request) {
+            ->when($canManageTickets && $request->filled('department_id'), function ($query) use ($request) {
                 $query->whereHas('ticket.department', function ($q) use ($request) {
                     $q->where('id', $request->input('department_id'));
                 });
@@ -51,10 +58,10 @@ class TicketHistoryController extends Controller
             ->latest()
             ->get();
 
-        $departments = Department::query()->orderBy('name')->get();
-        $officers = User::query()->whereIn('role', ['it_manager', 'it_officer'])->orderBy('name')->get();
-        $employees = User::query()->where('role', 'employee')->orderBy('name')->get();
+        $departments = $canManageTickets ? Department::query()->orderBy('name')->get() : collect();
+        $officers = $canManageTickets ? User::query()->whereIn('role', ['it_manager', 'it_officer'])->orderBy('name')->get() : collect();
+        $employees = $canManageTickets ? User::query()->where('role', 'employee')->orderBy('name')->get() : collect();
 
-        return view('ticket-histories.index', compact('histories', 'departments', 'officers', 'employees'));
+        return view('ticket-histories.index', compact('histories', 'departments', 'officers', 'employees', 'canManageTickets'));
     }
 }
