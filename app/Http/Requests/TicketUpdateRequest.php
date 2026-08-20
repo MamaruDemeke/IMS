@@ -15,7 +15,7 @@ class TicketUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', 'in:open,in_progress,resolved,closed'],
+            'status' => ['required', 'in:open,in_progress,resolved,closed,pending_confirmation'],
             'priority' => ['nullable', 'in:low,medium,high,urgent'],
             'assigned_to' => ['nullable', 'exists:users,id'],
             'response' => ['nullable', 'string', 'min:3', 'max:4000'],

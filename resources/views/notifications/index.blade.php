@@ -12,15 +12,15 @@
             <div class="border-b border-slate-200 p-4">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="font-semibold text-slate-900">{{ $notification->ticket?->title ?? 'Ticket update' }}</p>
-                        <p class="text-sm text-slate-700">{{ $notification->details }}</p>
+                        <p class="font-semibold text-slate-900">{{ $notification->data['ticket_title'] ?? 'Ticket update' }}</p>
+                        <p class="text-sm text-slate-700">{{ $notification->data['details'] ?? 'No details available.' }}</p>
                     </div>
                     <a href="{{ route('notifications.open', $notification) }}" class="rounded-full bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700">Open</a>
                 </div>
                 <div class="mt-2 text-xs text-slate-500">
-                    <span>{{ $notification->ticket?->ticket_number ?? 'N/A' }}</span>
+                    <span>{{ $notification->data['ticket_number'] ?? 'N/A' }}</span>
                     <span class="mx-2">•</span>
-                    <span>{{ ucfirst($notification->action) }}</span>
+                    <span>{{ ucfirst($notification->data['action'] ?? 'updated') }}</span>
                     <span class="mx-2">•</span>
                     <span>{{ $notification->created_at?->format('M d, Y h:i A') }}</span>
                 </div>

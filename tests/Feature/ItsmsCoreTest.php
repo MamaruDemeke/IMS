@@ -3,6 +3,7 @@
 use App\Models\Department;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Notifications\TicketActivityNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -52,13 +53,14 @@ test('it staff dashboard shows recent ticket activity', function () {
         'action' => 'created',
         'details' => 'Cannot connect to VPN from remote office.',
     ]);
+    $itOfficer->notify(new TicketActivityNotification($ticket, 'created', 'Cannot connect to VPN from remote office.'));
 
     $this->actingAs($itOfficer)
         ->get('/dashboard')
         ->assertOk()
         ->assertSee('Recent Notifications')
         ->assertSee('Cannot connect to VPN from remote office.')
-        ->assertSee('Staff User');
+        ->assertSee('VPN access issue');
 });
 
 test('employee can create a support ticket', function () {
@@ -72,6 +74,10 @@ test('employee can create a support ticket', function () {
         'role' => 'employee',
         'department_id' => $department->id,
     ]);
+    $itOfficer = User::factory()->create([
+        'role' => 'it_officer',
+        'department_id' => $department->id,
+    ]);
 
     $response = $this->actingAs($employee)
         ->post('/tickets', [
@@ -83,6 +89,7 @@ test('employee can create a support ticket', function () {
         ]);
 
     $response->assertRedirect('/tickets');
+    expect($itOfficer->unreadNotifications()->count())->toBe(1);
 });
 
 test('employees only see their own ticket activity on the dashboard', function () {
@@ -117,13 +124,15 @@ test('employees only see their own ticket activity on the dashboard', function (
 
     $ownTicket->histories()->create(['user_id' => $employee->id, 'action' => 'created', 'details' => 'My private ticket activity']);
     $otherTicket->histories()->create(['user_id' => $otherEmployee->id, 'action' => 'created', 'details' => 'Another employee ticket activity']);
+    $employee->notify(new TicketActivityNotification($ownTicket, 'created', 'My private ticket activity'));
+    $otherEmployee->notify(new TicketActivityNotification($otherTicket, 'created', 'Another employee ticket activity'));
 
     $this->actingAs($employee)
         ->get('/dashboard')
         ->assertOk()
         ->assertSee('My private ticket activity')
         ->assertDontSee('Another employee ticket activity')
-        ->assertSee('My Ticket Activity');
+        ->assertSee('Recent Notifications');
 });
 
 test('employees can view ticket history and notification buttons on the dashboard', function () {
@@ -151,6 +160,7 @@ test('employees can view ticket history and notification buttons on the dashboar
         'details' => 'Ticket created by the employee',
         'is_read' => false,
     ]);
+    $employee->notify(new TicketActivityNotification($ticket, 'created', 'Ticket created by the employee'));
 
     $this->actingAs($employee)
         ->get('/dashboard')
@@ -179,12 +189,8 @@ test('employees can open unread notifications from their dashboard', function ()
         'department_id' => $department->id,
     ]);
 
-    $history = $ticket->histories()->create([
-        'user_id' => $employee->id,
-        'action' => 'created',
-        'details' => 'New update from IT',
-        'is_read' => false,
-    ]);
+    $employee->notify(new TicketActivityNotification($ticket, 'responded', 'New update from IT'));
+    $notification = $employee->notifications()->firstOrFail();
 
     $this->actingAs($employee)
         ->get('/notifications')
@@ -193,6 +199,39 @@ test('employees can open unread notifications from their dashboard', function ()
         ->assertSee('VPN issue');
 
     $this->actingAs($employee)
-        ->get('/notifications/'.$history->id.'/open')
+        ->get('/notifications/'.$notification->id.'/open')
         ->assertRedirect();
+});
+
+test('dashboard only shows a user notifications from the last three days in a scrollable list', function () {
+    $department = Department::create([
+        'name' => 'Support',
+        'code' => 'SUP',
+        'description' => 'Support department',
+    ]);
+    $employee = User::factory()->create(['role' => 'employee', 'department_id' => $department->id]);
+    $ticket = Ticket::create([
+        'ticket_number' => 'ITSMS-THREEDAY',
+        'title' => 'Laptop support',
+        'description' => 'Laptop issue',
+        'status' => 'open',
+        'priority' => 'medium',
+        'category' => 'Hardware',
+        'user_id' => $employee->id,
+        'department_id' => $department->id,
+    ]);
+
+    $employee->notify(new TicketActivityNotification($ticket, 'responded', 'Recent support response'));
+    $employee->notify(new TicketActivityNotification($ticket, 'responded', 'Old support response'));
+    $employee->notifications()
+        ->get()
+        ->first(fn ($notification) => $notification->data['details'] === 'Old support response')
+        ?->update(['created_at' => now()->subDays(4)]);
+
+    $this->actingAs($employee)
+        ->get('/dashboard')
+        ->assertOk()
+        ->assertSee('Recent support response')
+        ->assertDontSee('Old support response')
+        ->assertSee('overflow-y-auto', false);
 });

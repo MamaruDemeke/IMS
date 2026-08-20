@@ -32,6 +32,19 @@
 
         <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div>
+                <h2 class="font-semibold">Staff Chat</h2>
+                <p class="text-sm text-slate-600">Allow or block secure private chat between authorized IT staff.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-sm font-medium {{ ($settings['staff_chat_enabled'] ?? '1') == '1' ? 'text-green-600' : 'text-red-600' }}">
+                    {{ ($settings['staff_chat_enabled'] ?? '1') == '1' ? 'On' : 'Off' }}
+                </span>
+                <input type="checkbox" name="staff_chat_enabled" value="1" {{ ($settings['staff_chat_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div>
                 <h2 class="font-semibold">User Management</h2>
                 <p class="text-sm text-slate-600">Allow admin user CRUD and password reset controls.</p>
             </div>

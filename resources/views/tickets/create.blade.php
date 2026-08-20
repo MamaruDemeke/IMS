@@ -65,7 +65,17 @@
         </div>
         <div>
             <label class="mb-2 block text-sm font-medium text-slate-700">Attachment (optional)</label>
-            <input type="file" name="attachment" class="w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2.5 text-sm" accept=".pdf,.jpg,.jpeg,.png,.txt,.doc,.docx">
+            <div class="flex items-center gap-3">
+                <label for="attachment-input" class="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-100">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
+                    <span>Attach file</span>
+                </label>
+                <input id="attachment-input" type="file" name="attachment" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.txt,.doc,.docx" onchange="document.getElementById('attachment-name').textContent = this.files[0] ? this.files[0].name : ''">
+                <span id="attachment-name" class="text-sm text-slate-500"></span>
+            </div>
+            <p class="mt-1 text-xs text-slate-400">PDF, image, text, or Word files. Max 2 MB.</p>
             @error('attachment')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
         </div>
 

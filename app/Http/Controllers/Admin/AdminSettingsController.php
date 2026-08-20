@@ -27,12 +27,14 @@ class AdminSettingsController extends Controller
             'ticket_notifications_enabled' => ['nullable', 'boolean'],
             'user_management_enabled' => ['nullable', 'boolean'],
             'ticket_creation_enabled' => ['nullable', 'boolean'],
+            'staff_chat_enabled' => ['nullable', 'boolean'],
         ]);
 
         $toggles = [
             'ticket_notifications_enabled' => $request->boolean('ticket_notifications_enabled'),
             'user_management_enabled' => $request->boolean('user_management_enabled'),
             'ticket_creation_enabled' => $request->boolean('ticket_creation_enabled'),
+            'staff_chat_enabled' => $request->boolean('staff_chat_enabled'),
         ];
 
         foreach ($toggles as $key => $value) {

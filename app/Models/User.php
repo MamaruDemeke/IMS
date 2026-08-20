@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role', 'department_id', 'phone', 'is_active'])]
+#[Fillable(['name', 'email', 'password', 'role', 'department_id', 'phone', 'is_active', 'profile_photo'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -34,6 +34,31 @@ class User extends Authenticatable
         return $this->hasMany(TicketHistory::class);
     }
 
+    public function sentGeneralMessages(): HasMany
+    {
+        return $this->hasMany(GeneralMessage::class, 'sender_id');
+    }
+
+    public function receivedGeneralMessages(): HasMany
+    {
+        return $this->hasMany(GeneralMessage::class, 'receiver_id');
+    }
+
+    public function getProfilePhotoUrlAttribute(): string
+    {
+        return $this->profile_photo
+            ? asset('storage/'.$this->profile_photo)
+            : 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&background=6366f1&color=fff&bold=true';
+    }
+
+    public function resetLoginAttempts(): void
+    {
+        $this->forceFill([
+            'failed_login_attempts' => 0,
+            'final_login_attempt_available_at' => null,
+        ])->save();
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -45,6 +70,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'final_login_attempt_available_at' => 'datetime',
         ];
     }
 }

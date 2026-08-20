@@ -24,6 +24,12 @@
             </div>
         @endif
 
+        @if (session('final_login_attempt_available_at'))
+            <div id="final-login-countdown" data-available-at="{{ session('final_login_attempt_available_at') }}" class="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                Your final login attempt will be available in <span class="font-semibold">1:00</span>.
+            </div>
+        @endif
+
         <form method="POST" action="{{ route('login') }}" class="space-y-5">
             @csrf
             <div>
@@ -104,6 +110,29 @@
         eyeIcon.classList.toggle('hidden', !isPassword);
         eyeSlashIcon.classList.toggle('hidden', isPassword);
     });
+
+    const countdown = document.getElementById('final-login-countdown');
+
+    if (countdown) {
+        const availableAt = new Date(countdown.dataset.availableAt);
+        const countdownText = countdown.querySelector('span');
+        let countdownInterval;
+        const updateCountdown = () => {
+            const secondsRemaining = Math.max(0, Math.ceil((availableAt.getTime() - Date.now()) / 1000));
+            const minutes = Math.floor(secondsRemaining / 60);
+            const seconds = String(secondsRemaining % 60).padStart(2, '0');
+
+            countdownText.textContent = `${minutes}:${seconds}`;
+
+            if (secondsRemaining === 0) {
+                countdownText.textContent = 'now';
+                clearInterval(countdownInterval);
+            }
+        };
+
+        updateCountdown();
+        countdownInterval = setInterval(updateCountdown, 1000);
+    }
 </script>
 @endsection
                 <

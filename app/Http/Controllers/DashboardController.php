@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use App\Models\Ticket;
-use App\Models\TicketHistory;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -24,27 +23,13 @@ class DashboardController extends Controller
         $openTickets = (clone $ticketQuery)->where('status', 'open')->count();
         $users = $canManageTickets ? User::query()->count() : null;
         $departments = $canManageTickets ? Department::query()->count() : null;
-        $historyQuery = TicketHistory::query()
-            ->when(! $canManageTickets, function ($query) use ($request) {
-                $query->whereHas('ticket', function ($ticketQuery) use ($request) {
-                    $ticketQuery->where('user_id', $request->user()?->getKey());
-                });
-            });
-        $communicationNotifications = (clone $historyQuery)->count();
-        $unreadNotifications = (clone $historyQuery)
-            ->where('is_read', false)
-            ->count();
-        $recentNotifications = TicketHistory::query()
-            ->with(['ticket.user', 'ticket.department', 'user'])
-            ->when(! $canManageTickets, function ($query) use ($request) {
-                $query->whereHas('ticket', function ($ticketQuery) use ($request) {
-                    $ticketQuery->where('user_id', $request->user()?->getKey());
-                });
-            })
+        $unreadNotifications = $request->user()?->unreadNotifications()->count() ?? 0;
+        $recentNotifications = $request->user()?->notifications()
+            ->where('created_at', '>=', now()->subDays(3))
             ->latest()
-            ->take(5)
-            ->get();
+            ->take(20)
+            ->get() ?? collect();
 
-        return view('dashboard', compact('tickets', 'openTickets', 'users', 'departments', 'communicationNotifications', 'unreadNotifications', 'recentNotifications', 'canManageTickets'));
+        return view('dashboard', compact('tickets', 'openTickets', 'users', 'departments', 'unreadNotifications', 'recentNotifications', 'canManageTickets'));
     }
 }

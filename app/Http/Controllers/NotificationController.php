@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TicketHistory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\View\View;
 
 class NotificationController extends Controller
@@ -14,26 +13,23 @@ class NotificationController extends Controller
     {
         abort_unless($request->user() !== null, 403);
 
-        $notifications = TicketHistory::query()
-            ->with(['ticket.user', 'ticket.department', 'user'])
-            ->where('is_read', false)
-            ->whereHas('ticket', function ($ticketQuery) use ($request) {
-                $ticketQuery->where('user_id', $request->user()?->getKey());
-            })
+        $notifications = $request->user()?->unreadNotifications()
             ->latest()
-            ->get();
+            ->get() ?? collect();
 
         return view('notifications.index', compact('notifications'));
     }
 
-    public function open(Request $request, TicketHistory $history): RedirectResponse
+    public function open(Request $request, DatabaseNotification $notification): RedirectResponse
     {
-        abort_unless($history->ticket?->user_id === $request->user()?->getKey() || Gate::check('manage-tickets', $request->user()), 403);
+        abort_unless($notification->notifiable_id === $request->user()?->getKey(), 403);
 
-        $history->update(['is_read' => true]);
+        $notification->markAsRead();
 
-        return $history->ticket !== null
-            ? redirect()->route('tickets.show', $history->ticket)
+        $ticketId = $notification->data['ticket_id'] ?? null;
+
+        return $ticketId !== null
+            ? redirect()->route('tickets.show', $ticketId)
             : redirect()->route('notifications.index');
     }
 }

@@ -87,6 +87,7 @@ class UserManagementController extends Controller
         abort_unless($request->user()?->role === 'admin', 403);
 
         $validated = $request->validated();
+        $wasInactive = ! $user->is_active;
 
         $user->update([
             'name' => $validated['name'],
@@ -97,7 +98,13 @@ class UserManagementController extends Controller
             ...(filled($validated['password']) ? ['password' => Hash::make($validated['password'])] : []),
         ]);
 
-        return redirect()->route('admin.users.index')->with('status', 'User updated successfully.');
+        if ($wasInactive && $user->is_active) {
+            $user->resetLoginAttempts();
+        }
+
+        return redirect()->route('admin.users.index')->with('status', $wasInactive && $user->is_active
+            ? 'User reactivated and login attempts reset successfully.'
+            : 'User updated successfully.');
     }
 
     public function destroy(Request $request, User $user): RedirectResponse

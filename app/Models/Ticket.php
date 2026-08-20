@@ -21,6 +21,7 @@ class Ticket extends Model
         'user_id',
         'department_id',
         'assigned_to',
+        'attachment_path',
     ];
 
     public function user(): BelongsTo

@@ -11,7 +11,9 @@
         </div>
         <div class="flex flex-wrap gap-3">
             <a href="{{ route('ticket-histories.index') }}" class="rounded-full bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-violet-700">History</a>
+            @unless (auth()->user()?->can('manage-tickets'))
             <a href="{{ route('tickets.create') }}" class="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700">New Ticket</a>
+            @endunless
         </div>
     </div>
 
@@ -29,6 +31,7 @@
                 <th class="p-3">Priority</th>
                 <th class="p-3">Status</th>
                 <th class="p-3">Department</th>
+                <th class="p-3">Communication</th>
             </tr>
             </thead>
             <tbody>
@@ -40,10 +43,17 @@
                     <td class="p-3">{{ ucfirst($ticket->priority) }}</td>
                     <td class="p-3">{{ ucfirst($ticket->status) }}</td>
                     <td class="p-3">{{ $ticket->department?->name ?? 'Unassigned' }}</td>
+                    <td class="p-3">
+                        @can('manage-tickets')
+                            <a href="{{ route('tickets.show', $ticket) }}?compose=1#ticket-message" class="inline-flex rounded-full bg-sky-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-sky-700">
+                                Secure IT Communication
+                            </a>
+                        @endcan
+                    </td>
                 </tr>
             @empty
                 <tr>
-                    <td class="p-3" colspan="6">No tickets have been submitted yet.</td>
+                    <td class="p-3" colspan="7">No tickets have been submitted yet.</td>
                 </tr>
             @endforelse
             </tbody>

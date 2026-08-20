@@ -33,81 +33,86 @@
                 <p><strong>Priority:</strong> {{ ucfirst($ticket->priority) }}</p>
                 <p><strong>Status:</strong> {{ ucfirst(str_replace('_', ' ', $ticket->status)) }}</p>
                 <p><strong>Description:</strong> {{ $ticket->description }}</p>
+                @if ($ticket->attachment_path)
+                    <div class="pt-2">
+                        <strong>Attachment:</strong>
+                        <a href="{{ route('tickets.download', $ticket) }}" class="inline-flex items-center gap-1.5 text-blue-600 underline hover:text-blue-800">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Download attachment
+                        </a>
+                    </div>
+                @endif
             </div>
         </div>
 
-        @can('respond-to-ticket', $ticket)
+        @can('manage-tickets')
             <div class="rounded-2xl border border-slate-200 bg-white p-6">
-                <h2 class="mb-4 text-xl font-semibold text-slate-900">{{ auth()->user()?->can('manage-tickets') ? 'Add Conversation' : 'Reply to IT Department' }}</h2>
-                <form action="{{ route('tickets.messages.store', $ticket) }}" method="POST" class="space-y-4" enctype="multipart/form-data" data-confirm="Are you sure you want to send this message?">
+                <h2 class="mb-4 text-xl font-semibold text-slate-900">IT Support Action</h2>
+                <form action="{{ route('tickets.update', $ticket) }}" method="POST" class="space-y-3" data-confirm="Are you sure you want to save these changes?">
                     @csrf
-                    <div>
-                        <label class="mb-2 block text-sm font-medium text-slate-700">Message</label>
-                        <textarea name="message" rows="5" class="w-full rounded-xl border border-slate-300 px-3 py-2.5" placeholder="Describe the issue, follow-up details, or your latest update..."></textarea>
+                    @method('PUT')
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-slate-700">Status</label>
+                            <select name="status" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                                <option value="open" {{ $ticket->status === 'open' ? 'selected' : '' }}>Open</option>
+                                <option value="in_progress" {{ $ticket->status === 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                                <option value="resolved" {{ $ticket->status === 'resolved' ? 'selected' : '' }}>Resolved</option>
+                                <option value="closed" {{ $ticket->status === 'closed' ? 'selected' : '' }}>Closed</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-slate-700">Priority</label>
+                            <select name="priority" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                                <option value="low" {{ $ticket->priority === 'low' ? 'selected' : '' }}>Low</option>
+                                <option value="medium" {{ $ticket->priority === 'medium' ? 'selected' : '' }}>Medium</option>
+                                <option value="high" {{ $ticket->priority === 'high' ? 'selected' : '' }}>High</option>
+                                <option value="urgent" {{ $ticket->priority === 'urgent' ? 'selected' : '' }}>Urgent</option>
+                            </select>
+                        </div>
                     </div>
                     <div>
-                        <label class="mb-2 block text-sm font-medium text-slate-700">Attachment (optional)</label>
-                        <input type="file" name="attachment" class="w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2.5 text-sm" accept=".pdf,.jpg,.jpeg,.png,.txt,.doc,.docx">
+                        <label class="mb-1 block text-sm font-medium text-slate-700">Assign To</label>
+                        <select name="assigned_to" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                            <option value="">Unassigned</option>
+                            @foreach (\App\Models\User::query()->whereIn('role', ['it_manager', 'it_officer'])->orderBy('name')->get() as $assignee)
+                                <option value="{{ $assignee->id }}" {{ $ticket->assigned_to == $assignee->id ? 'selected' : '' }}>{{ $assignee->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
-                    <button type="submit" class="rounded-full bg-sky-600 px-5 py-2.5 font-medium text-white transition hover:bg-sky-700">{{ auth()->user()?->can('manage-tickets') ? 'Send Message' : 'Reply' }}</button>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">Response / Solution</label>
+                        <textarea name="response" rows="4" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Add troubleshooting, solution, or close-out details..."></textarea>
+                    </div>
+                    <button type="submit" class="rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-blue-700">Save Response</button>
                 </form>
             </div>
         @endcan
     </div>
 
-    @can('manage-tickets')
-        <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
-            <h2 class="mb-4 text-xl font-semibold text-slate-900">IT Support Action</h2>
-            <form action="{{ route('tickets.update', $ticket) }}" method="POST" class="space-y-4" data-confirm="Are you sure you want to save these changes?">
-                @csrf
-                @method('PUT')
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Status</label>
-                    <select name="status" class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
-                        <option value="open" {{ $ticket->status === 'open' ? 'selected' : '' }}>Open</option>
-                        <option value="in_progress" {{ $ticket->status === 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                        <option value="resolved" {{ $ticket->status === 'resolved' ? 'selected' : '' }}>Resolved</option>
-                        <option value="closed" {{ $ticket->status === 'closed' ? 'selected' : '' }}>Closed</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Priority</label>
-                    <select name="priority" class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
-                        <option value="low" {{ $ticket->priority === 'low' ? 'selected' : '' }}>Low</option>
-                        <option value="medium" {{ $ticket->priority === 'medium' ? 'selected' : '' }}>Medium</option>
-                        <option value="high" {{ $ticket->priority === 'high' ? 'selected' : '' }}>High</option>
-                        <option value="urgent" {{ $ticket->priority === 'urgent' ? 'selected' : '' }}>Urgent</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Assign To</label>
-                    <select name="assigned_to" class="w-full rounded-xl border border-slate-300 px-3 py-2.5">
-                        <option value="">Unassigned</option>
-                        @foreach (\App\Models\User::query()->whereIn('role', ['it_manager', 'it_officer'])->orderBy('name')->get() as $assignee)
-                            <option value="{{ $assignee->id }}" {{ $ticket->assigned_to == $assignee->id ? 'selected' : '' }}>{{ $assignee->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Response / Solution</label>
-                    <textarea name="response" rows="5" class="w-full rounded-xl border border-slate-300 px-3 py-2.5" placeholder="Add troubleshooting, solution, or close-out details..."></textarea>
-                </div>
-                <button type="submit" class="rounded-full bg-blue-600 px-5 py-2.5 font-medium text-white transition hover:bg-blue-700">Save Response</button>
-            </form>
-        </div>
-    @endcan
-
     <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
-        <h2 class="mb-4 text-xl font-semibold text-slate-900">Ticket Conversation Timeline</h2>
-        <div class="space-y-3">
+        <h2 class="mb-1 text-xl font-semibold text-slate-900">Conversation with IT Department</h2>
+        <p class="mb-4 text-sm text-slate-600">Messages from you appear on the right; messages from the other participant appear on the left.</p>
+        <div class="max-h-[32rem] space-y-3 overflow-y-auto rounded-xl bg-slate-50 p-4">
             @forelse ($ticket->histories as $history)
-                <div class="border-b border-slate-200 pb-3 last:border-b-0">
-                    <p class="font-semibold text-slate-900">{{ ucfirst(str_replace('_', ' ', $history->action)) }} by {{ $history->user?->name ?? 'System' }}</p>
-                    <p class="text-slate-700">{{ $history->details }}</p>
-                    <p class="text-xs text-slate-500">{{ $history->created_at?->format('M d, Y h:i A') }}</p>
-                </div>
+                @if (in_array($history->action, ['created', 'replied', 'responded'], true))
+                    @php($isCurrentUserMessage = $history->user_id === auth()->id())
+                    <div class="flex {{ $isCurrentUserMessage ? 'justify-end' : 'justify-start' }}">
+                        <div class="max-w-[85%] rounded-2xl px-4 py-3 shadow-sm {{ $isCurrentUserMessage ? 'rounded-br-md bg-blue-600 text-white' : 'rounded-bl-md bg-white text-slate-800' }}">
+                            <p class="mb-1 text-xs font-semibold {{ $isCurrentUserMessage ? 'text-blue-100' : 'text-slate-500' }}">{{ $isCurrentUserMessage ? 'You' : ($history->user?->name ?? 'IT Support') }}</p>
+                            <p class="whitespace-pre-wrap text-sm">{{ $history->details }}</p>
+                            <p class="mt-2 text-right text-xs {{ $isCurrentUserMessage ? 'text-blue-100' : 'text-slate-500' }}">{{ $history->created_at?->format('M d, Y h:i A') }}</p>
+                        </div>
+                    </div>
+                @else
+                    <div class="py-1 text-center text-xs text-slate-500">
+                        {{ ucfirst(str_replace('_', ' ', $history->action)) }}: {{ $history->details }}
+                    </div>
+                @endif
             @empty
-                <p class="text-slate-600">No history has been recorded yet.</p>
+                <p class="text-center text-slate-600">No messages have been recorded yet.</p>
             @endforelse
         </div>
     </div>
